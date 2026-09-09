@@ -100,7 +100,7 @@
       const [apiKey, setApiKey] = useState("");
       const [images, setImages] = useState([]);
       const [direccion, setDireccion] = useState("");
-      const [tipo, setTipo] = useState("Casa habitación");
+      const [tipo, setTipo] = useState("Vivienda");
       const [antiguedad, setAntiguedad] = useState("");
       const [notas, setNotas] = useState("");
       const [dragging, setDragging] = useState(false);
@@ -129,12 +129,13 @@
 
       const removeImage = (id) => setImages((prev) => prev.filter((i) => i.id !== id));
 
-      async function callGemini(parts, responseSchema) {
+      // Llamada robusta a la API de Gemini con reintento automático ante saturación (503 / 429)
+      async function callGemini(parts, responseSchema, maxRetries = 3) {
         if (!apiKey) {
           throw new Error("Por favor, ingrese su clave de API de Gemini.");
         }
 
-        const model = "gemini-3.6-flash";
+        const model = "gemini-2.5-flash";
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
 
         const requestBody = {
@@ -146,29 +147,35 @@
           }
         };
 
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestBody),
-        });
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            const response = await fetch(url, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(requestBody),
+            });
 
-        if (!response.ok) {
-          const t = await response.text().catch(() => "");
-          throw new Error(`HTTP ${response.status} — ${t.slice(0, 300)}`);
-        }
+            if (!response.ok) {
+              const t = await response.text().catch(() => "");
+              if ((response.status === 503 || response.status === 429) && attempt < maxRetries) {
+                setStatus(`Servidor en alta demanda (503). Reintentando en ${attempt * 2}s (intento ${attempt} de ${maxRetries})…`);
+                await new Promise((r) => setTimeout(r, attempt * 2000));
+                continue;
+              }
+              throw new Error(`HTTP ${response.status} — ${t.slice(0, 300)}`);
+            }
 
-        const data = await response.json();
-        const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!candidate) {
-          throw new Error("Gemini no retornó contenido en la respuesta.");
-        }
+            const data = await response.json();
+            const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!candidate) {
+              throw new Error("Gemini no retornó contenido en la respuesta.");
+            }
 
-        try {
-          return JSON.parse(candidate);
-        } catch (e) {
-          const match = candidate.match(/\{[\s\S]*\}/);
-          if (match) return JSON.parse(match[0]);
-          throw new Error("No se pudo interpretar el formato devuelto.");
+            return JSON.parse(candidate);
+          } catch (err) {
+            if (attempt === maxRetries) throw err;
+            await new Promise((r) => setTimeout(r, 2000));
+          }
         }
       }
 
@@ -204,8 +211,9 @@
             required: ["elemento", "hallazgos", "estado"]
           };
 
+          // Paso 1: Análisis secuencial de imágenes
           for (let i = 0; i < images.length; i++) {
-            setStatus(`Analizando imagen ${i + 1} de ${images.length} con Gemini...`);
+            setStatus(`Analizando fotografía ${i + 1} de ${images.length} con Gemini...`);
             const img = images[i];
 
             const parts = [
@@ -229,11 +237,17 @@
               estado
             });
             setImages((prev) => prev.map((im, idx) => (idx === i ? { ...im, estado } : im)));
+
+            // Pausa preventiva de 1.2s entre llamadas
+            if (i < images.length - 1) {
+              await new Promise((r) => setTimeout(r, 1200));
+            }
           }
 
+          // Paso 2: Redacción del dictamen pericial
           setStatus("Redactando informe pericial con Gemini...");
           const resumenElementos = elementos
-            .map((e) => `- Imagen ${e.imagen} · ${e.elemento} (calificación ${e.estado}/5): ${e.hallazgos}`)
+            .map((e) => `- Fotografía ${e.imagen} · ${e.elemento} (calificación ${e.estado}/5): ${e.hallazgos}`)
             .join("\n");
 
           const promptReporte = `Eres un perito tasador y especialista en valuación de activos inmobiliarios.
@@ -425,7 +439,7 @@ Instrucciones:
                 </div>
 
                 <div className="ic-panel" style={{ marginTop: 20 }}>
-                  <h2>FOTOGRAFÍAS DE PATOLOGÍAS Y ELEMENTOS</h2>
+                  <h2>FOTOGRAFÍAS DEL INMUEBLE</h2>
                   <div
                     className={"ic-dropzone" + (dragging ? " drag" : "")}
                     onClick={() => fileInputRef.current?.click()}
@@ -467,7 +481,7 @@ Instrucciones:
                   )}
 
                   <button className="ic-btn-primary" disabled={images.length === 0 || loading} onClick={analizar}>
-                    {loading ? "Procesando imágenes con Gemini…" : "Analizar y emitir dictamen"}
+                    {loading ? "Procesando fotografías con Gemini…" : "Analizar y emitir dictamen"}
                   </button>
                   <div className={"ic-status" + (statusErr ? " err" : "")}>
                     {loading && <span className="ic-spin" />}
