@@ -129,13 +129,11 @@
 
       const removeImage = (id) => setImages((prev) => prev.filter((i) => i.id !== id));
 
-      // Llamada a la API de Gemini
       async function callGemini(parts, responseSchema) {
         if (!apiKey) {
           throw new Error("Por favor, ingrese su clave de API de Gemini.");
         }
 
-        // Modelo actualizado según requerimiento de la API
         const model = "gemini-3.6-flash";
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
 
@@ -206,7 +204,6 @@
             required: ["elemento", "hallazgos", "estado"]
           };
 
-          // Paso 1: Análisis por imagen
           for (let i = 0; i < images.length; i++) {
             setStatus(`Analizando imagen ${i + 1} de ${images.length} con Gemini...`);
             const img = images[i];
@@ -234,7 +231,6 @@
             setImages((prev) => prev.map((im, idx) => (idx === i ? { ...im, estado } : im)));
           }
 
-          // Paso 2: Redacción del dictamen
           setStatus("Redactando informe pericial con Gemini...");
           const resumenElementos = elementos
             .map((e) => `- Imagen ${e.imagen} · ${e.elemento} (calificación ${e.estado}/5): ${e.hallazgos}`)
@@ -370,7 +366,6 @@ Instrucciones:
             </header>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24, alignItems: "start" }}>
-              {/* PANEL DE CONTROL / FORMULARIO */}
               <div className="ic-no-print">
                 <div className="ic-panel">
                   <h2>CONFIGURACIÓN DE ACCESO</h2>
@@ -403,7 +398,7 @@ Instrucciones:
                         <option>Apartamento</option>
                         <option>Local comercial</option>
                         <option>Oficina</option>
-                        <option>inmueble industrial</option>
+                        <option>Inmueble industrial</option>
                         <option>Bienhechurías</option>
                         <option>Otro</option>
                       </select>
@@ -481,7 +476,6 @@ Instrucciones:
                 </div>
               </div>
 
-              {/* PANEL DE RESULTADOS */}
               <div>
                 <div className="ic-panel">
                   <h2>HALLAZGOS POR ELEMENTO CONSTRUCTIVO</h2>
@@ -567,7 +561,7 @@ Instrucciones:
     }
 
     const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<InspectorConservacion />);
+    root.render(<EstadodeConservacion />);
   </script>
 </body>
 </html>
