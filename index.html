@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Inspector de Conservación — Valuación Inmobiliaria (Gemini AI)</title>
+  <title>Estado de Conservación — Valuación Inmobiliaria (Gemini AI)</title>
 
   <!-- Tipografías de Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -96,7 +96,7 @@
       });
     }
 
-    function InspectorConservacion() {
+    function EstadodeConservacion() {
       const [apiKey, setApiKey] = useState("");
       const [images, setImages] = useState([]);
       const [direccion, setDireccion] = useState("");
@@ -399,12 +399,12 @@ Instrucciones:
                     <div>
                       <label className="ic-label">Tipo de inmueble</label>
                       <select className="ic-select" value={tipo} onChange={(e) => setTipo(e.target.value)}>
-                        <option>Casa habitación</option>
-                        <option>Departamento</option>
+                        <option>Vivienda</option>
+                        <option>Apartamento</option>
                         <option>Local comercial</option>
-                        <option>Nave industrial</option>
                         <option>Oficina</option>
-                        <option>Terreno con mejoras</option>
+                        <option>inmueble industrial</option>
+                        <option>Bienhechurías</option>
                         <option>Otro</option>
                       </select>
                     </div>
