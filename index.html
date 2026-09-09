@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inspector de Conservación — Valuación Inmobiliaria (Gemini AI)</title>
+
+  <!-- Tipografías de Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- React 18, ReactDOM y Babel Standalone vía CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body { margin: 0; padding: 0; box-sizing: border-box; }
+    .ic-input, .ic-select, .ic-textarea {
+      width: 100%; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; color: #1E2A32;
+      background: #EEF1EF; border: 1px solid #C9D1CC; border-radius: 2px; padding: 8px 10px; margin-bottom: 14px;
+      box-sizing: border-box;
+    }
+    .ic-textarea { resize: vertical; min-height: 64px; }
+    .ic-label { display: block; font-size: 12.5px; color: #4B5B63; margin: 0 0 4px; font-weight: 500; }
+    .ic-panel { background: #fff; border: 1px solid #C9D1CC; border-radius: 2px; padding: 20px; box-sizing: border-box; }
+    .ic-panel h2 { font-family: 'IBM Plex Mono', monospace; font-size: 12px; margin: 0 0 14px; color: #4B5B63; font-weight: 500; border-bottom: 1px solid #DCE2DE; padding-bottom: 8px; letter-spacing: 0.5px; }
+    .ic-btn-primary { width: 100%; background: #1E2A32; color: #fff; border: none; border-radius: 2px; padding: 11px 16px; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .ic-btn-primary:disabled { background: #9AA6AC; cursor: default; }
+    .ic-btn-primary:hover:not(:disabled) { background: #8A4A1F; }
+    .ic-btn-ghost { background: transparent; border: 1px solid #C9D1CC; color: #1E2A32; border-radius: 2px; padding: 8px 12px; font-size: 13px; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; }
+    .ic-btn-ghost:hover { border-color: #1E2A32; }
+    .ic-dropzone { border: 1.5px dashed #C9D1CC; border-radius: 2px; padding: 22px 14px; text-align: center; cursor: pointer; color: #4B5B63; font-size: 13.5px; margin-bottom: 14px; transition: all 0.2s; }
+    .ic-dropzone.drag { border-color: #B5652C; background: #FBF3EC; }
+    .ic-thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; margin-bottom: 14px; }
+    .ic-thumb { position: relative; aspect-ratio: 1; border: 1px solid #C9D1CC; border-radius: 2px; overflow: hidden; background: #EEF1EF; }
+    .ic-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .ic-thumb .rm { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; background: rgba(30,42,50,.75); color: #fff; border: none; font-size: 12px; line-height: 18px; cursor: pointer; border-radius: 1px; }
+    .ic-thumb .badge { position: absolute; bottom: 0; left: 0; right: 0; font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-align: center; padding: 2px 0; color: #fff; }
+    .ic-empty { color: #4B5B63; font-size: 13.5px; border: 1px dashed #DCE2DE; border-radius: 2px; padding: 24px; text-align: center; }
+    .ic-el-card { border: 1px solid #DCE2DE; border-radius: 2px; padding: 14px; margin-bottom: 10px; display: grid; grid-template-columns: 64px 1fr auto; gap: 12px; align-items: start; }
+    .ic-el-card img { width: 64px; height: 64px; object-fit: cover; border-radius: 2px; border: 1px solid #DCE2DE; }
+    .ic-el-card h3 { margin: 0 0 4px; font-size: 14.5px; font-weight: 600; }
+    .ic-el-card p { margin: 0; font-size: 13px; color: #4B5B63; line-height: 1.5; }
+    .ic-estado-badge { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 15px; color: #fff; border-radius: 2px; }
+    .ic-reporte-box { font-family: 'IBM Plex Serif', serif; font-size: 14.5px; line-height: 1.7; white-space: pre-wrap; background: #EEF1EF; border: 1px solid #DCE2DE; border-radius: 2px; padding: 20px; max-height: 520px; overflow-y: auto; }
+    .ic-status { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #4B5B63; margin-top: 10px; min-height: 16px; }
+    .ic-status.err { color: #A83A2C; }
+    .ic-spin { display: inline-block; width: 12px; height: 12px; border: 2px solid #C9D1CC; border-top-color: #B5652C; border-radius: 50%; animation: ic-spin .7s linear infinite; vertical-align: -2px; margin-right: 6px; }
+    @keyframes ic-spin { to { transform: rotate(360deg); } }
+    @media print { .ic-no-print { display: none !important; } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef, useCallback } = React;
+
+    const COLORS = { 1: "#3F7D55", 2: "#7A9A4E", 3: "#C79A2E", 4: "#C06A2E", 5: "#A83A2C" };
+    const CATEGORIAS = {
+      1: "Nuevo / excelente",
+      2: "Bueno",
+      3: "Regular",
+      4: "Malo",
+      5: "Muy malo / ruinoso",
+    };
+
+    function resizeAndEncode(file) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = () => {
+          img.onload = () => {
+            const maxDim = 1024;
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+              const scale = maxDim / Math.max(width, height);
+              width = Math.round(width * scale);
+              height = Math.round(height * scale);
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+            resolve({ dataUrl, base64: dataUrl.split(",")[1], mediaType: "image/jpeg" });
+          };
+          img.onerror = reject;
+          img.src = reader.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function InspectorConservacion() {
+      const [apiKey, setApiKey] = useState("");
+      const [images, setImages] = useState([]);
+      const [direccion, setDireccion] = useState("");
+      const [tipo, setTipo] = useState("Casa habitación");
+      const [antiguedad, setAntiguedad] = useState("");
+      const [notas, setNotas] = useState("");
+      const [dragging, setDragging] = useState(false);
+      const [loading, setLoading] = useState(false);
+      const [status, setStatus] = useState("");
+      const [statusErr, setStatusErr] = useState(false);
+      const [result, setResult] = useState(null);
+      const idSeq = useRef(0);
+      const fileInputRef = useRef(null);
+      const reporteRef = useRef(null);
+
+      const handleFiles = useCallback(async (fileList) => {
+        const files = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+        const added = [];
+        for (const file of files) {
+          try {
+            const { dataUrl, base64, mediaType } = await resizeAndEncode(file);
+            idSeq.current += 1;
+            added.push({ id: idSeq.current, name: file.name, dataUrl, base64, mediaType, estado: null });
+          } catch (e) {
+            console.error("No se pudo procesar", file.name, e);
+          }
+        }
+        setImages((prev) => [...prev, ...added]);
+      }, []);
+
+      const removeImage = (id) => setImages((prev) => prev.filter((i) => i.id !== id));
+
+      // Llamada a la API de Gemini
+      async function callGemini(parts, responseSchema) {
+        if (!apiKey) {
+          throw new Error("Por favor, ingrese su clave de API de Gemini.");
+        }
+
+        // Modelo actualizado según requerimiento de la API
+        const model = "gemini-3.6-flash";
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
+
+        const requestBody = {
+          contents: [{ parts }],
+          generationConfig: {
+            temperature: 0.2,
+            responseMimeType: "application/json",
+            ...(responseSchema ? { responseSchema } : {})
+          }
+        };
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const t = await response.text().catch(() => "");
+          throw new Error(`HTTP ${response.status} — ${t.slice(0, 300)}`);
+        }
+
+        const data = await response.json();
+        const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!candidate) {
+          throw new Error("Gemini no retornó contenido en la respuesta.");
+        }
+
+        try {
+          return JSON.parse(candidate);
+        } catch (e) {
+          const match = candidate.match(/\{[\s\S]*\}/);
+          if (match) return JSON.parse(match[0]);
+          throw new Error("No se pudo interpretar el formato devuelto.");
+        }
+      }
+
+      const analizar = async () => {
+        if (images.length === 0) return;
+        if (!apiKey) {
+          setStatus("Debe ingresar su Gemini API Key para continuar.");
+          setStatusErr(true);
+          return;
+        }
+
+        setLoading(true);
+        setStatusErr(false);
+        setResult(null);
+
+        const ESCALA = `Escala de estado de conservación (criterio tipo Heideck), 1 a 5:
+1 = Nuevo / excelente, sin daños visibles ni envejecimiento apreciable.
+2 = Bueno, desgaste normal por uso, mantenimiento preventivo adecuado.
+3 = Regular, deterioro moderado, requiere mantenimiento correctivo.
+4 = Malo, deterioro significativo, requiere reparaciones importantes.
+5 = Muy malo / ruinoso, deterioro severo, riesgo de estabilidad o requiere reposición total.`;
+
+        try {
+          const elementos = [];
+          
+          const schemaElemento = {
+            type: "OBJECT",
+            properties: {
+              elemento: { type: "STRING", description: "Elemento constructivo principal observado" },
+              hallazgos: { type: "STRING", description: "Descripción técnica breve de 1-2 frases sobre daños, patologías o buen estado" },
+              estado: { type: "INTEGER", description: "Calificación entera del 1 al 5 según la escala técnica provista" }
+            },
+            required: ["elemento", "hallazgos", "estado"]
+          };
+
+          // Paso 1: Análisis por imagen
+          for (let i = 0; i < images.length; i++) {
+            setStatus(`Analizando imagen ${i + 1} de ${images.length} con Gemini...`);
+            const img = images[i];
+
+            const parts = [
+              {
+                inlineData: {
+                  mimeType: img.mediaType,
+                  data: img.base64
+                }
+              },
+              {
+                text: `Eres un asistente pericial para valuación inmobiliaria y patología constructiva. Analiza esta fotografía del inmueble según la siguiente escala:\n${ESCALA}\nIdentifica el elemento constructivo principal visible, sintetiza los hallazgos patológicos o de conservación y asigna la calificación del 1 al 5.`
+              }
+            ];
+
+            const parsed = await callGemini(parts, schemaElemento);
+            const estado = Number(parsed.estado) || null;
+            elementos.push({
+              imagen: i + 1,
+              elemento: parsed.elemento || "Elemento constructivo",
+              hallazgos: parsed.hallazgos || "",
+              estado
+            });
+            setImages((prev) => prev.map((im, idx) => (idx === i ? { ...im, estado } : im)));
+          }
+
+          // Paso 2: Redacción del dictamen
+          setStatus("Redactando informe pericial con Gemini...");
+          const resumenElementos = elementos
+            .map((e) => `- Imagen ${e.imagen} · ${e.elemento} (calificación ${e.estado}/5): ${e.hallazgos}`)
+            .join("\n");
+
+          const promptReporte = `Eres un perito tasador y especialista en valuación de activos inmobiliarios.
+A partir de la inspección fotográfica previa se obtuvieron los siguientes hallazgos por elemento constructivo:
+
+${resumenElementos}
+
+Datos del inmueble inspeccionado:
+- Dirección/Referencia: ${direccion || "No especificada"}
+- Tipo de bien: ${tipo}
+- Antigüedad aproximada: ${antiguedad ? antiguedad + " años" : "No especificada"}
+- Observaciones de campo del inspector: ${notas || "Ninguna"}
+
+${ESCALA}
+
+Instrucciones:
+1. Pondera técnicamente los elementos observados para emitir una calificación de estado de conservación GENERAL (número entero de 1 a 5).
+2. Justifica brevemente la ponderación adoptada.
+3. Redacta un reporte técnico pericial formal en español (entre 250 y 400 palabras) listo para incorporarse a un dictamen o informe de avalúo. Debe incluir: identificación del inmueble, declaración de alcance preliminar (inspección visual fotográfica asistida por IA sujeta a contrastación en sitio), análisis razonado de elementos, estado general ponderado y recomendaciones puntuales para la inspección física detallada.`;
+
+          const schemaSintesis = {
+            type: "OBJECT",
+            properties: {
+              estado_general: { type: "INTEGER", description: "Entero de 1 a 5 con la calificación ponderada general" },
+              categoria_general: { 
+                type: "STRING", 
+                enum: ["Nuevo / excelente", "Bueno", "Regular", "Malo", "Muy malo / ruinoso"] 
+              },
+              justificacion_general: { type: "STRING", description: "Justificación sucinta del criterio adoptado" },
+              reporte_tecnico: { type: "STRING", description: "Texto completo del reporte técnico con saltos de línea" }
+            },
+            required: ["estado_general", "categoria_general", "justificacion_general", "reporte_tecnico"]
+          };
+
+          const sintesis = await callGemini([{ text: promptReporte }], schemaSintesis);
+
+          setResult({
+            elementos,
+            estado_general: Number(sintesis.estado_general) || null,
+            categoria_general: sintesis.categoria_general || CATEGORIAS[sintesis.estado_general] || "",
+            justificacion_general: sintesis.justificacion_general || "",
+            reporte_tecnico: sintesis.reporte_tecnico || "",
+          });
+          setStatus("Análisis completado con éxito.");
+          setStatusErr(false);
+        } catch (err) {
+          console.error(err);
+          setStatus("Error: " + err.message);
+          setStatusErr(true);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const copiarReporte = () => {
+        if (!result?.reporte_tecnico) return;
+        navigator.clipboard.writeText(result.reporte_tecnico).then(() => {
+          setStatus("Reporte copiado al portapapeles.");
+          setStatusErr(false);
+        });
+      };
+
+      const descargarReporte = () => {
+        if (!result?.reporte_tecnico) return;
+        const blob = new Blob([result.reporte_tecnico], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "reporte_estado_conservacion.txt";
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      return (
+        <div
+          style={{
+            fontFamily: "'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif",
+            color: "#1E2A32",
+            background:
+              "linear-gradient(#DCE2DE 1px, transparent 1px) 0 0/100% 32px, linear-gradient(90deg, #DCE2DE 1px, transparent 1px) 0 0/32px 100%, #EEF1EF",
+            minHeight: "100vh",
+            padding: "28px 20px 80px",
+          }}
+        >
+          <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+            <header
+              style={{
+                display: "flex",
+                alignItems: "flex-end",
+                justifyContent: "space-between",
+                gap: 24,
+                borderBottom: "2px solid #1E2A32",
+                paddingBottom: 16,
+                marginBottom: 28,
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
+                <h1 style={{ fontFamily: "'IBM Plex Serif', serif", fontWeight: 600, fontSize: 26, margin: 0 }}>
+                  Inspector de Conservación
+                </h1>
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#4B5B63" }}>
+                  análisis visual asistido · clasificación tipo Heideck (Gemini AI)
+                </span>
+              </div>
+              <div className="ic-no-print" style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: "#4B5B63", marginRight: 6 }}>
+                  ESCALA
+                </span>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <span
+                    key={n}
+                    style={{
+                      width: 20,
+                      height: 20,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontFamily: "'IBM Plex Mono',monospace",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      color: n === 3 ? "#3a2c0a" : "#fff",
+                      background: COLORS[n],
+                    }}
+                  >
+                    {n}
+                  </span>
+                ))}
+              </div>
+            </header>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24, alignItems: "start" }}>
+              {/* PANEL DE CONTROL / FORMULARIO */}
+              <div className="ic-no-print">
+                <div className="ic-panel">
+                  <h2>CONFIGURACIÓN DE ACCESO</h2>
+                  <label className="ic-label">Google Gemini API Key</label>
+                  <input
+                    className="ic-input"
+                    type="password"
+                    placeholder="Pega aquí tu API Key de Gemini..."
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                  />
+                  <span style={{ fontSize: 11, color: "#4B5B63", display: "block", marginTop: -8, marginBottom: 14 }}>
+                    Obtenida en Google AI Studio. Se procesa sólo en la sesión local de tu navegador.
+                  </span>
+
+                  <h2>DATOS DEL INMUEBLE</h2>
+                  <label className="ic-label">Dirección / Referencia</label>
+                  <input
+                    className="ic-input"
+                    type="text"
+                    placeholder="Calle, número, urbanización, ciudad"
+                    value={direccion}
+                    onChange={(e) => setDireccion(e.target.value)}
+                  />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <div>
+                      <label className="ic-label">Tipo de inmueble</label>
+                      <select className="ic-select" value={tipo} onChange={(e) => setTipo(e.target.value)}>
+                        <option>Casa habitación</option>
+                        <option>Departamento</option>
+                        <option>Local comercial</option>
+                        <option>Nave industrial</option>
+                        <option>Oficina</option>
+                        <option>Terreno con mejoras</option>
+                        <option>Otro</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="ic-label">Antigüedad (años)</label>
+                      <input
+                        className="ic-input"
+                        type="number"
+                        min="0"
+                        placeholder="Opcional"
+                        value={antiguedad}
+                        onChange={(e) => setAntiguedad(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <label className="ic-label">Notas de campo del perito</label>
+                  <textarea
+                    className="ic-textarea"
+                    placeholder="Contexto: reparaciones, remodelaciones, elementos no accesibles..."
+                    value={notas}
+                    onChange={(e) => setNotas(e.target.value)}
+                  />
+                </div>
+
+                <div className="ic-panel" style={{ marginTop: 20 }}>
+                  <h2>FOTOGRAFÍAS DE PATOLOGÍAS Y ELEMENTOS</h2>
+                  <div
+                    className={"ic-dropzone" + (dragging ? " drag" : "")}
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                    onDragLeave={() => setDragging(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragging(false);
+                      handleFiles(e.dataTransfer.files);
+                    }}
+                  >
+                    <strong style={{ color: "#1E2A32" }}>Arrastra fotografías aquí</strong> o haz clic para seleccionar
+                    <br />
+                    <span style={{ fontSize: 12 }}>fachadas, techos, muros, pisos, instalaciones...</span>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    style={{ display: "none" }}
+                    onChange={(e) => handleFiles(e.target.files)}
+                  />
+
+                  {images.length > 0 && (
+                    <div className="ic-thumbs">
+                      {images.map((img) => (
+                        <div className="ic-thumb" key={img.id}>
+                          <img src={img.dataUrl} alt={img.name} />
+                          <button className="rm" onClick={() => removeImage(img.id)} title="Eliminar">×</button>
+                          {img.estado && (
+                            <div className="badge" style={{ background: COLORS[img.estado] }}>
+                              E{img.estado}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <button className="ic-btn-primary" disabled={images.length === 0 || loading} onClick={analizar}>
+                    {loading ? "Procesando imágenes con Gemini…" : "Analizar y emitir dictamen"}
+                  </button>
+                  <div className={"ic-status" + (statusErr ? " err" : "")}>
+                    {loading && <span className="ic-spin" />}
+                    {status}
+                  </div>
+                </div>
+              </div>
+
+              {/* PANEL DE RESULTADOS */}
+              <div>
+                <div className="ic-panel">
+                  <h2>HALLAZGOS POR ELEMENTO CONSTRUCTIVO</h2>
+                  {!result && (
+                    <div className="ic-empty">
+                      Carga fotografías del inmueble y presiona «Analizar y emitir dictamen» para ver los resultados periciales.
+                    </div>
+                  )}
+                  {result &&
+                    (result.elementos || []).map((el, i) => {
+                      const img = images[i];
+                      return (
+                        <div className="ic-el-card" key={i}>
+                          {img ? <img src={img.dataUrl} alt="" /> : <div />}
+                          <div>
+                            <h3>{el.elemento || "Elemento constructivo"}</h3>
+                            <p>{el.hallazgos || ""}</p>
+                          </div>
+                          <div className="ic-estado-badge" style={{ background: COLORS[el.estado] || "#8A8A8A" }}>
+                            {el.estado ?? "–"}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+
+                {result && (
+                  <div className="ic-panel" style={{ marginTop: 20 }}>
+                    <h2>CALIFICACIÓN GENERAL DEL INMUEBLE</h2>
+                    <div style={{ display: "flex", gap: 20, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+                      <div
+                        style={{
+                          width: 84,
+                          height: 84,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#fff",
+                          borderRadius: 2,
+                          flexShrink: 0,
+                          background: COLORS[result.estado_general] || "#8A8A8A",
+                        }}
+                      >
+                        <div style={{ fontFamily: "'IBM Plex Serif',serif", fontSize: 36, fontWeight: 600, lineHeight: 1 }}>
+                          {result.estado_general ?? "–"}
+                        </div>
+                        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, opacity: 0.85 }}>DE 5</div>
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: "#4B5B63", marginBottom: 4 }}>
+                          ESTADO DE CONSERVACIÓN GENERAL
+                        </div>
+                        <h3 style={{ margin: 0, fontFamily: "'IBM Plex Serif',serif", fontSize: 20, fontWeight: 600 }}>
+                          {result.categoria_general || CATEGORIAS[result.estado_general] || ""}
+                        </h3>
+                      </div>
+                    </div>
+                    <p style={{ fontSize: 14, lineHeight: 1.6, color: "#1E2A32", margin: 0 }}>
+                      {result.justificacion_general}
+                    </p>
+                  </div>
+                )}
+
+                {result && (
+                  <div className="ic-panel" style={{ marginTop: 20 }}>
+                    <h2>REPORTE TÉCNICO PERICIAL</h2>
+                    <div className="ic-reporte-box" ref={reporteRef}>
+                      {result.reporte_tecnico}
+                    </div>
+                    <div className="ic-no-print" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                      <button className="ic-btn-ghost" onClick={copiarReporte}>Copiar texto</button>
+                      <button className="ic-btn-ghost" onClick={descargarReporte}>Descargar .txt</button>
+                      <button className="ic-btn-ghost" onClick={() => window.print()}>Imprimir / Guardar PDF</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<InspectorConservacion />);
+  </script>
+</body>
+</html>
